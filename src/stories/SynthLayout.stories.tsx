@@ -809,17 +809,77 @@ export const SquareGrid: StoryObj = {
             </div>
           </SquareModule>
 
-          {/* Row 3: Keyboard spans all 4 columns, same height as squares */}
-          <SquareModule title="KEYBOARD" span={4}>
-            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center' }}>
+          {/* Row 3: More square modules */}
+          <SquareModule title="KEYBOARD" color={colors.text.muted}>
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <PianoKeyboard
-                startOctave={2}
-                octaves={5}
+                startOctave={4}
+                octaves={2}
                 activeNotes={activeNotes}
                 onNoteOn={(note) => setActiveNotes(prev => [...prev, note])}
                 onNoteOff={(note) => setActiveNotes(prev => prev.filter(n => n !== note))}
-                height={100}
+                height={80}
               />
+            </div>
+          </SquareModule>
+
+          <SquareModule title="LFO" color={colors.accent.yellow}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <WaveformDisplay type="sine" color={colors.accent.yellow} />
+              <OptionButtons
+                options={['SIN', 'TRI', 'SAW', 'SQR']}
+                value="SIN"
+                color={colors.accent.yellow}
+                size="sm"
+              />
+              <CompactSlider label="Rate" value={0.3} color={colors.accent.yellow} />
+              <CompactSlider label="Depth" value={0.5} color={colors.accent.cyan} />
+            </div>
+          </SquareModule>
+
+          <SquareModule title="MIXER" color={colors.accent.coral}>
+            <div style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <CompactSlider label="OSC 1" value={0.7} color={colors.accent.coral} />
+              <CompactSlider label="OSC 2" value={0} color={colors.accent.coral} />
+              <CompactSlider label="OSC 3" value={0} color={colors.accent.coral} />
+              <CompactSlider label="Noise" value={0} color={colors.accent.cyan} />
+            </div>
+          </SquareModule>
+
+          <SquareModule title="OUTPUT" color={colors.accent.green}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+              <div style={{
+                width: 60,
+                height: 60,
+                borderRadius: '50%',
+                background: `conic-gradient(${colors.accent.green} ${masterLevel * 270}deg, ${colors.bg.elevated} 0deg)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <div style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: '50%',
+                  background: colors.bg.surface,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 14,
+                  color: colors.text.primary,
+                }}>
+                  {Math.round(masterLevel * 100)}
+                </div>
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                color: colors.text.muted,
+                textTransform: 'uppercase',
+              }}>
+                VOLUME
+              </div>
             </div>
           </SquareModule>
         </div>
