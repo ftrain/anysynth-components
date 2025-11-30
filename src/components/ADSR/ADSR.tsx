@@ -104,8 +104,11 @@ export const ADSR: React.FC<ADSRProps> = ({
     if (!dragTarget || !dragStartRef.current || !svgRef.current) return;
 
     const rect = svgRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    // Convert screen coordinates to SVG viewBox coordinates
+    const scaleX = svgWidth / rect.width;
+    const scaleY = height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
 
     const newValue = { ...value };
 
