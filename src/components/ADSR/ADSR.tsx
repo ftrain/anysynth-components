@@ -39,6 +39,8 @@ export const ADSR: React.FC<ADSRProps> = ({
   const [hoveredPoint, setHoveredPoint] = useState<DragTarget>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const dragStartRef = useRef<{ x: number; y: number; value: EnvelopeParams } | null>(null);
+  // Track the working value during drag to prevent snap-back from stale props
+  const workingValueRef = useRef<EnvelopeParams>(value);
 
   const padding = { top: 16, right: 16, bottom: 24, left: 16 };
   // SVG width for calculations (rendered responsively with viewBox)
@@ -92,6 +94,9 @@ export const ADSR: React.FC<ADSRProps> = ({
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     setDragTarget(target);
 
+    // Initialize working value from current props
+    workingValueRef.current = { ...value };
+
     const rect = svg.getBoundingClientRect();
     dragStartRef.current = {
       x: e.clientX - rect.left,
@@ -110,7 +115,8 @@ export const ADSR: React.FC<ADSRProps> = ({
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
 
-    const newValue = { ...value };
+    // Use working value to prevent snap-back from stale props during drag
+    const newValue = { ...workingValueRef.current };
 
     switch (dragTarget) {
       case 'attack': {
@@ -139,8 +145,10 @@ export const ADSR: React.FC<ADSRProps> = ({
       }
     }
 
+    // Update working ref and notify parent
+    workingValueRef.current = newValue;
     onChange?.(newValue);
-  }, [dragTarget, value, onChange, attackWidth, decayWidth, sustainWidth, releaseWidth, graphHeight, maxAttack, maxDecay, maxRelease, padding.left, padding.top]);
+  }, [dragTarget, onChange, attackWidth, decayWidth, sustainWidth, releaseWidth, graphHeight, maxAttack, maxDecay, maxRelease, padding.left, padding.top]);
 
   const handlePointerUp = useCallback(() => {
     setDragTarget(null);

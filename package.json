@@ -3,8 +3,15 @@
   "version": "0.1.0",
   "description": "A comprehensive synthesizer UI component library for React",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/synth-components.js",
+  "module": "dist/synth-components.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/synth-components.js",
+      "require": "./dist/synth-components.umd.cjs"
+    }
+  },
   "scripts": {
     "dev": "storybook dev -p 6006",
     "build": "tsc && vite build",
