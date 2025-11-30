@@ -72,9 +72,35 @@ src/
 - Delete/Backspace: Reset
 
 ### Responsive behavior
-- Mobile (< 768px): Single column, stacked modules
-- Tablet/Desktop: CSS Grid with `auto-fit` and `minmax(280px, 1fr)`
-- Modules should fill available space organically
+
+**IMPORTANT: Box Layout Pattern**
+- All modules should be fixed-size squares (e.g., 320px × 320px)
+- Use flexbox with `flex-wrap: wrap` for natural reflow
+- Set explicit `width` and `height` with `flex-shrink: 0` to prevent scaling
+- Boxes wrap like words in a sentence as window narrows
+- **Never use CSS Grid with `auto-fill`** - it tries to fit columns and shrinks rightmost boxes
+- **Never use responsive `1fr` columns** - boxes must maintain constant size
+
+```css
+/* CORRECT: Fixed-size boxes with flexbox wrap */
+.module-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.module-container > * {
+  width: 320px;
+  height: 320px;
+  flex-shrink: 0;  /* Critical: prevents shrinking */
+}
+
+/* WRONG: Grid with auto-fill or 1fr */
+.module-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 320px);  /* Will shrink boxes */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));  /* Will scale boxes */
+}
+```
 
 ## State Management
 

@@ -59,6 +59,7 @@ export const NestedSliderCircular: React.FC<NestedSliderCircularProps> = ({
   const [activeParam, setActiveParam] = useState<string | null>(null);
   const [hoveredParam, setHoveredParam] = useState<string | null>(null);
   const [hoveredOption, setHoveredOption] = useState<string | null>(null);
+  const [isContainerHovered, setIsContainerHovered] = useState(false);
   const [enabled, setEnabled] = useState(true);
   const [containerSize, setContainerSize] = useState(0);
 
@@ -344,6 +345,11 @@ export const NestedSliderCircular: React.FC<NestedSliderCircularProps> = ({
     <div
       ref={containerRef}
       className="synth-control"
+      onMouseEnter={() => setIsContainerHovered(true)}
+      onMouseLeave={() => {
+        setIsContainerHovered(false);
+        setHoveredParam(null);
+      }}
       style={{
         ...moduleStyles.base,
         ...(compact ? moduleStyles.compact : {}),
@@ -506,8 +512,8 @@ export const NestedSliderCircular: React.FC<NestedSliderCircularProps> = ({
           );
         })}
 
-        {/* Options halo - dots along the arc outside the knob */}
-        {paramWithOptions && getOptionPositions(paramWithOptions).map((pos) => {
+        {/* Options halo - dots along the arc outside the knob - only visible on hover */}
+        {isContainerHovered && paramWithOptions && getOptionPositions(paramWithOptions).map((pos) => {
           const isSelected = selectedOptions[paramWithOptions.id] === pos.label;
           const isHovered = hoveredOption === pos.label;
           const color = getColor(paramWithOptions);
