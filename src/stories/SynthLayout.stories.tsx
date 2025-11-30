@@ -409,6 +409,425 @@ export const MobileLayout: StoryObj = {
   },
 };
 
+// Square module wrapper - EVERY module is a perfect square
+const SquareModule: React.FC<{
+  title?: string;
+  children: React.ReactNode;
+  span?: number;  // How many grid cells to span horizontally
+  color?: string;
+}> = ({ title, children, span = 1, color }) => (
+  <div
+    style={{
+      gridColumn: span > 1 ? `span ${span}` : undefined,
+      aspectRatio: span > 1 ? `${span} / 1` : '1 / 1',
+      background: colors.bg.surface,
+      borderRadius: 12,
+      border: `1px solid ${color ? color + '33' : colors.bg.border}`,
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      minWidth: 0,
+    }}
+  >
+    {title && (
+      <div style={{
+        padding: '10px 14px',
+        fontFamily: 'var(--font-mono)',
+        fontSize: 11,
+        color: color || colors.text.muted,
+        textTransform: 'uppercase',
+        letterSpacing: '0.1em',
+        flexShrink: 0,
+      }}>
+        {title}
+      </div>
+    )}
+    <div style={{
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 12,
+      minHeight: 0,
+      overflow: 'hidden',
+    }}>
+      {children}
+    </div>
+  </div>
+);
+
+// Compact waveform display for oscillators
+const WaveformDisplay: React.FC<{ type: 'saw' | 'tri' | 'pulse' | 'sine'; color?: string }> = ({ type, color = colors.accent.yellow }) => {
+  const paths: Record<string, string> = {
+    saw: 'M 0,40 L 80,10 L 80,40 L 160,10 L 160,40',
+    tri: 'M 0,40 L 40,10 L 80,40 L 120,10 L 160,40',
+    pulse: 'M 0,35 L 0,10 L 40,10 L 40,35 L 80,35 L 80,10 L 120,10 L 120,35 L 160,35',
+    sine: 'M 0,25 Q 20,5 40,25 T 80,25 T 120,25 T 160,25',
+  };
+  return (
+    <svg width="100%" height="50" viewBox="0 0 160 50" preserveAspectRatio="xMidYMid meet">
+      <path d={paths[type]} stroke={color} strokeWidth="2" fill="none" opacity="0.8" />
+    </svg>
+  );
+};
+
+// Compact option buttons
+const OptionButtons: React.FC<{
+  options: string[];
+  value: string;
+  onChange?: (v: string) => void;
+  color?: string;
+  size?: 'sm' | 'md';
+}> = ({ options, value, onChange, color = colors.accent.cyan, size = 'md' }) => (
+  <div style={{
+    display: 'flex',
+    gap: size === 'sm' ? 2 : 4,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  }}>
+    {options.map(opt => (
+      <button
+        key={opt}
+        onClick={() => onChange?.(opt)}
+        style={{
+          background: value === opt ? color : colors.bg.elevated,
+          border: 'none',
+          borderRadius: 4,
+          padding: size === 'sm' ? '4px 6px' : '6px 10px',
+          fontFamily: 'var(--font-mono)',
+          fontSize: size === 'sm' ? 9 : 10,
+          color: value === opt ? colors.bg.base : colors.text.muted,
+          cursor: 'pointer',
+          textTransform: 'uppercase',
+        }}
+      >
+        {opt}
+      </button>
+    ))}
+  </div>
+);
+
+// Compact slider for square modules
+const CompactSlider: React.FC<{
+  label: string;
+  value: number;
+  onChange?: (v: number) => void;
+  color?: string;
+  showValue?: boolean;
+}> = ({ label, value, color = colors.accent.cyan, showValue = true }) => (
+  <div style={{ width: '100%', marginBottom: 8 }}>
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      marginBottom: 4,
+      fontFamily: 'var(--font-mono)',
+      fontSize: 9,
+      color: colors.text.muted,
+      textTransform: 'uppercase',
+    }}>
+      <span>{label}</span>
+      {showValue && <span style={{ color: colors.text.secondary }}>{Math.round(value * 100)}%</span>}
+    </div>
+    <div
+      style={{
+        width: '100%',
+        height: 6,
+        background: colors.bg.elevated,
+        borderRadius: 3,
+        cursor: 'ew-resize',
+        position: 'relative',
+      }}
+    >
+      <div style={{
+        width: `${value * 100}%`,
+        height: '100%',
+        background: color,
+        borderRadius: 3,
+      }} />
+    </div>
+  </div>
+);
+
+// Square Grid Synthesizer - every module is a perfect square
+export const SquareGrid: StoryObj = {
+  render: () => {
+    const [osc1Wave, setOsc1Wave] = useState('SAW');
+    const [osc2Wave, setOsc2Wave] = useState('SAW');
+    const [osc3Wave, setOsc3Wave] = useState('SAW');
+    const [osc1Range, setOsc1Range] = useState("8'");
+    const [osc2Range, setOsc2Range] = useState("8'");
+    const [osc3Range, setOsc3Range] = useState("8'");
+    const [osc1Level, setOsc1Level] = useState(0.7);
+    const [osc2Detune, setOsc2Detune] = useState(0.5);
+    const [osc2Level, setOsc2Level] = useState(0);
+    const [osc3Detune, setOsc3Detune] = useState(0.5);
+    const [osc3Level, setOsc3Level] = useState(0);
+    const [noiseLevel, setNoiseLevel] = useState(0);
+    const [masterLevel] = useState(0.7);
+    const [filterCutoff, setFilterCutoff] = useState(0.7);
+    const [filterRes, setFilterRes] = useState(0);
+    const [filterEnvAmt] = useState(0.5);
+    const [filterKeyTrk, setFilterKeyTrk] = useState(0.5);
+    const [glideMode, setGlideMode] = useState('OFF');
+    const [activeNotes, setActiveNotes] = useState<number[]>([]);
+
+    const [ampEnv, setAmpEnv] = useState<EnvelopeParams>({
+      attack: 10,
+      decay: 100,
+      sustain: 0.8,
+      release: 1560,
+    });
+
+    const [filterEnv, setFilterEnv] = useState<EnvelopeParams>({
+      attack: 10,
+      decay: 300,
+      sustain: 0,
+      release: 200,
+    });
+
+    const waveTypeMap: Record<string, 'saw' | 'tri' | 'pulse'> = {
+      'SAW': 'saw', 'TRI': 'tri', 'PLS': 'pulse'
+    };
+
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: colors.bg.base,
+        padding: 20,
+      }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: 20,
+          padding: '0 4px',
+        }}>
+          <div>
+            <h1 style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 24,
+              fontWeight: 700,
+              color: colors.text.primary,
+              margin: 0,
+              letterSpacing: '0.05em',
+            }}>
+              MODEL D
+            </h1>
+            <div style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              color: colors.text.muted,
+              marginTop: 2,
+            }}>
+              Monophonic Synthesizer
+            </div>
+          </div>
+          <div style={{ width: 160 }}>
+            <div style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              color: colors.text.muted,
+              marginBottom: 4,
+              textAlign: 'right',
+            }}>
+              MASTER
+            </div>
+            <div style={{
+              height: 8,
+              background: colors.bg.elevated,
+              borderRadius: 4,
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                width: `${masterLevel * 100}%`,
+                height: '100%',
+                background: colors.accent.green,
+                borderRadius: 4,
+              }} />
+            </div>
+            <div style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              color: colors.text.secondary,
+              marginTop: 4,
+              textAlign: 'right',
+            }}>
+              {Math.round(masterLevel * 100)}%
+            </div>
+          </div>
+        </div>
+
+        {/* Main Grid - ALL SQUARES */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 16,
+          maxWidth: 1000,
+        }}>
+          {/* Row 1: Three Oscillators + Noise */}
+          <SquareModule title="OSC 1" color={colors.accent.yellow}>
+            <WaveformDisplay type={waveTypeMap[osc1Wave] || 'saw'} color={colors.accent.yellow} />
+            <OptionButtons
+              options={['SAW', 'TRI', 'PLS']}
+              value={osc1Wave}
+              onChange={setOsc1Wave}
+              color={colors.accent.yellow}
+            />
+            <div style={{ height: 12 }} />
+            <OptionButtons
+              options={["32'", "16'", "8'", "4'", "2'"]}
+              value={osc1Range}
+              onChange={setOsc1Range}
+              size="sm"
+            />
+            <div style={{ marginTop: 'auto', width: '100%' }}>
+              <CompactSlider label="Level" value={osc1Level} onChange={setOsc1Level} color={colors.accent.coral} />
+            </div>
+          </SquareModule>
+
+          <SquareModule title="OSC 2" color={colors.accent.yellow}>
+            <WaveformDisplay type={waveTypeMap[osc2Wave] || 'saw'} color={colors.accent.yellow} />
+            <OptionButtons
+              options={['SAW', 'TRI', 'PLS']}
+              value={osc2Wave}
+              onChange={setOsc2Wave}
+              color={colors.accent.yellow}
+            />
+            <div style={{ height: 12 }} />
+            <OptionButtons
+              options={["32'", "16'", "8'", "4'", "2'"]}
+              value={osc2Range}
+              onChange={setOsc2Range}
+              size="sm"
+            />
+            <div style={{ marginTop: 'auto', width: '100%' }}>
+              <CompactSlider label="Detune" value={osc2Detune} onChange={setOsc2Detune} color={colors.accent.cyan} showValue={false} />
+              <CompactSlider label="Level" value={osc2Level} onChange={setOsc2Level} color={colors.accent.coral} />
+            </div>
+          </SquareModule>
+
+          <SquareModule title="OSC 3" color={colors.accent.yellow}>
+            <WaveformDisplay type={waveTypeMap[osc3Wave] || 'saw'} color={colors.accent.yellow} />
+            <OptionButtons
+              options={['SAW', 'TRI', 'PLS']}
+              value={osc3Wave}
+              onChange={setOsc3Wave}
+              color={colors.accent.yellow}
+            />
+            <div style={{ height: 12 }} />
+            <OptionButtons
+              options={["32'", "16'", "8'", "4'", "2'"]}
+              value={osc3Range}
+              onChange={setOsc3Range}
+              size="sm"
+            />
+            <div style={{ marginTop: 'auto', width: '100%' }}>
+              <CompactSlider label="Detune" value={osc3Detune} onChange={setOsc3Detune} color={colors.accent.cyan} showValue={false} />
+              <CompactSlider label="Level" value={osc3Level} onChange={setOsc3Level} color={colors.accent.coral} />
+            </div>
+          </SquareModule>
+
+          <SquareModule title="NOISE" color={colors.accent.cyan}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="80" height="60" viewBox="0 0 80 60">
+                {Array.from({ length: 40 }).map((_, i) => (
+                  <line
+                    key={i}
+                    x1={i * 2}
+                    y1={30 + (Math.random() - 0.5) * 40}
+                    x2={i * 2 + 1}
+                    y2={30 + (Math.random() - 0.5) * 40}
+                    stroke={colors.accent.cyan}
+                    strokeWidth="1"
+                    opacity="0.6"
+                  />
+                ))}
+              </svg>
+            </div>
+            <div style={{ marginTop: 'auto', width: '100%' }}>
+              <CompactSlider label="Level" value={noiseLevel} onChange={setNoiseLevel} color={colors.accent.cyan} />
+            </div>
+          </SquareModule>
+
+          {/* Row 2: Filter + Filter Env + Amp Env + Glide */}
+          <SquareModule title="FILTER" color={colors.accent.orange}>
+            <div style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <CompactSlider label="Cutoff" value={filterCutoff} onChange={setFilterCutoff} color={colors.accent.orange} />
+              <CompactSlider label="Res" value={filterRes} onChange={setFilterRes} color={colors.accent.coral} />
+              <CompactSlider label="Env Amt" value={filterEnvAmt} color={colors.accent.pink} showValue={false} />
+              <CompactSlider label="Key Trk" value={filterKeyTrk} onChange={setFilterKeyTrk} color={colors.accent.yellow} />
+            </div>
+          </SquareModule>
+
+          <SquareModule title="FILTER ENV" color={colors.accent.pink}>
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ADSR
+                value={filterEnv}
+                onChange={setFilterEnv}
+                color={colors.accent.pink}
+                height={140}
+              />
+            </div>
+          </SquareModule>
+
+          <SquareModule title="AMP ENV" color={colors.accent.coral}>
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ADSR
+                value={ampEnv}
+                onChange={setAmpEnv}
+                color={colors.accent.coral}
+                height={140}
+              />
+            </div>
+          </SquareModule>
+
+          <SquareModule title="GLIDE" color={colors.accent.purple}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+              <OptionButtons
+                options={['OFF', 'LEG', 'ON']}
+                value={glideMode}
+                onChange={setGlideMode}
+                color={colors.accent.purple}
+              />
+              <div style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                color: colors.text.muted,
+                textTransform: 'uppercase',
+              }}>
+                TIME
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 18,
+                color: glideMode === 'OFF' ? colors.text.muted : colors.text.primary,
+              }}>
+                {glideMode === 'OFF' ? 'OFF' : '50ms'}
+              </div>
+            </div>
+          </SquareModule>
+
+          {/* Row 3: Keyboard spans all 4 columns, same height as squares */}
+          <SquareModule title="KEYBOARD" span={4}>
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center' }}>
+              <PianoKeyboard
+                startOctave={2}
+                octaves={5}
+                activeNotes={activeNotes}
+                onNoteOn={(note) => setActiveNotes(prev => [...prev, note])}
+                onNoteOff={(note) => setActiveNotes(prev => prev.filter(n => n !== note))}
+                height={100}
+              />
+            </div>
+          </SquareModule>
+        </div>
+      </div>
+    );
+  },
+};
+
 // Minimal effect plugin
 export const EffectPlugin: StoryObj = {
   render: () => (

@@ -3,8 +3,6 @@ import { render, screen, fireEvent } from '../../test/test-utils';
 import { WaveformPicker, WaveformShape } from './WaveformPicker';
 
 describe('WaveformPicker', () => {
-  const defaultOptions: WaveformShape[] = ['sine', 'triangle', 'saw', 'square', 'noise'];
-
   describe('Rendering', () => {
     it('should render all default waveform options', () => {
       render(<WaveformPicker value="sine" />);
