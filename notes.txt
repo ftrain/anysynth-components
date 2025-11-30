@@ -1,0 +1,70 @@
+Okay restarted. I want to build a component library for synthesizers. The front-end will always be in react powered by typescript. It should use common react libraries and state management patterns. Basically there will be an audio backend and a webkit frontend.
+
+These plugins will run inside of DAWs but will also be compiled into a browser-based DAW and thus will be compiled into webassembly, and they must also look good in a phone format for native apps.
+
+
+Everything must be accessible and touch friendly.
+Ultrathink.
+We're focusing only on the components, which will be available in storybook and in a textual index that an LLM can quickly read.
+
+I'd like to present the hierarchy as I see it:
+
+There are three kinds of plugins: Instrument, AudioEffect, and MIDIEffect.
+
+- In practice, however, the boundaries can be blurry. I'm assuming you know about VSTs.
+- An Instrument always generates Audio based on MIDI inputs. But it may process Audio and MIDI and emit Audio and MIDI. It may also generate sound without MIDI input, or via an internal sequencer.
+- An AudioEffect always generates audio based on Audio inputs. MIDI could be used for control change though.
+- A MIDIEffect takes in MIDI and outputs MIDI.
+
+Every plugin has Modules, which are containers for components.
+
+Plugin:
+ Modules
+  Components
+
+In general a module feeds signal to the next module. Modules have names, like "Filter" or "Transport."
+
+Anyway. I'm going for a crisp digital aesthetic that is very modern and not skeumorphic. And I want a very consistent, minimalist set of components that can be re-used constantly.
+
+Take a look at the NestedKnob--that covers SO MANY use cases. Same with the sequencer.
+
+I think I want to move away from circles though. I want you to make NestedKnob into a set of horizontal sliders stacked on top of each other.
+
+Or actually let me see circular and horizontal and square and vertical. Play around. Show me some variation.
+
+Redesign the sequencer as you see fit.
+
+And then go on to make a whole hierarchy:
+
+- Transport controls
+- Multiple slider interface
+- Sequencer interface
+- Full text input
+- Numeric inputs
+- Mod matrix
+- LFO interface -- think about an LFO that's a minute long, it's a sine and it rises after a delay
+- Oscilloscope that displays waveforms with good settings and controls.
+- Oscillosocpe that displays spectra.
+- ADSR interface
+- Waveform visualizer
+- Mono/poly selector
+- Tabbed selectors
+- Macro knobs/sliders
+- Preset selector
+- Filter chooser
+- Waveshaper chooser
+- Effects modules that chain and have settings
+- LFO shape chooser
+- Options menu
+- Piano keyboard
+- Chord creator selector
+- Voice selector
+- Mute/solo
+- Full console mixing channel
+- Level meter
+- Activity monitor for inbound MIDI and audio
+- Logging view for the above
+- Wavetable view
+- Wavemixing LFO like on the Prophet V, which lets me morph from one sound to another over time.
+
+There should be a solid order always. For example In general synths must go from top to bottom but the order will not be rigorous. Everything must be in a module. On a phone things go top to bottom. But when the screen is wide modules should flow ORGANICALLY and fill up ALL available space. Things should be responsive, using flexbox. SVG is great here. What do you want to know?

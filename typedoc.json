@@ -1,0 +1,33 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts"],
+  "out": "docs",
+  "name": "AnySynth Components",
+  "readme": "none",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "includeVersion": true,
+  "categorizeByGroup": true,
+  "categoryOrder": [
+    "Components",
+    "Primitives",
+    "Types",
+    "Theme",
+    "*"
+  ],
+  "navigationLinks": {
+    "Storybook": "https://your-storybook-url.com",
+    "GitHub": "https://github.com/your-repo"
+  },
+  "plugin": ["typedoc-plugin-markdown"],
+  "githubPages": false,
+  "exclude": [
+    "**/*.test.tsx",
+    "**/*.test.ts",
+    "**/*.stories.tsx",
+    "**/test/**",
+    "**/*.stories.*"
+  ],
+  "skipErrorChecking": true
+}
