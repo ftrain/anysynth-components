@@ -196,11 +196,12 @@ export const LFO: React.FC<LFOProps> = ({
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: 12,
-        padding: 16,
+        gap: 14,
+        padding: 8,
         background: colors.bg.surface,
         borderRadius: 8,
         width,
+        minHeight: 'fit-content',
       }}
     >
       {/* Header */}

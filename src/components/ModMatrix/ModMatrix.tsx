@@ -223,15 +223,6 @@ export const ModMatrix: React.FC<ModMatrixProps> = ({
               {label}
             </div>
           )}
-          <div
-            style={{
-              fontSize: 10,
-              color: colors.text.muted,
-              fontFamily: 'var(--font-mono)',
-            }}
-          >
-            {visibleRoutes.length}/{maxRoutes} routes
-          </div>
         </div>
 
         {/* Route list */}
@@ -456,15 +447,6 @@ export const ModMatrix: React.FC<ModMatrixProps> = ({
             {label}
           </div>
         )}
-        <div
-          style={{
-            fontSize: 10,
-            color: colors.text.muted,
-            fontFamily: 'var(--font-mono)',
-          }}
-        >
-          {routes.filter((r) => r.enabled).length}/{maxRoutes}
-        </div>
       </div>
 
       {/* Matrix grid */}
