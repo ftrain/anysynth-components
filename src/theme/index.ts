@@ -18,3 +18,23 @@ export {
   injectThemeStyles,
   lightColors,
 } from './styles';
+// Grid system for 8x8 module alignment
+export {
+  MODULE_SIZE,
+  GRID_CELLS,
+  CELL_SIZE,
+  HALF_CELL,
+  QUARTER_CELL,
+  MODULE_RADIUS,
+  MODULE_PADDING,
+  TITLE_HEIGHT,
+  CONTENT_HEIGHT,
+  CONTENT_WIDTH,
+  pixelsToCells,
+  cellsToPixels,
+  snapToGrid,
+  snapToHalfGrid,
+  gridSizes,
+  gridSpacing,
+  moduleSizes,
+} from './grid';

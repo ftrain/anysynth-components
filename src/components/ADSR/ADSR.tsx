@@ -4,6 +4,11 @@
  * Visual envelope editor with draggable control points.
  * Shows attack, decay, sustain, and release as an interactive curve.
  * Touch-friendly with large hit areas.
+ *
+ * Grid-aligned version:
+ * - Fills container by default (use fillContainer=true for SquareModule)
+ * - SVG uses viewBox for responsive scaling
+ * - Control points have large touch targets
  */
 
 import React, { useState, useCallback, useRef, useMemo } from 'react';
@@ -18,9 +23,11 @@ interface ADSRProps {
   maxAttack?: number;
   maxDecay?: number;
   maxRelease?: number;
+  /** @deprecated Use fillContainer instead - height is ignored when fillContainer=true */
   height?: number;
   showValues?: boolean;
-  fillContainer?: boolean;  // Fill parent container (no padding/background)
+  /** Fill parent container (recommended for SquareModule) */
+  fillContainer?: boolean;
 }
 
 type DragTarget = 'attack' | 'decay' | 'sustain' | 'release' | null;

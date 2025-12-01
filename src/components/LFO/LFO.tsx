@@ -3,11 +3,17 @@
  *
  * Low Frequency Oscillator with shape visualization,
  * rate/depth controls, and delay/fade settings.
+ *
+ * Grid-aligned version:
+ * - Fills container when placed in SquareModule
+ * - Uses 100% width by default
+ * - Compact layout optimized for 320px modules
  */
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import type { LFOParams } from '../../types';
 import { colors } from '../../theme/tokens';
+import { CELL_SIZE, HALF_CELL } from '../../theme/grid';
 import { Slider } from '../Primitives';
 
 type LFOShape = LFOParams['shape'];
@@ -24,7 +30,10 @@ interface LFOProps {
   showDelay?: boolean;
   /** Sync to tempo (rate becomes ratio) */
   syncMode?: boolean;
+  /** @deprecated Use fillContainer instead - LFO fills parent container */
   width?: number;
+  /** Fill parent container (recommended for SquareModule) */
+  fillContainer?: boolean;
 }
 
 const SHAPES: { id: LFOShape; label: string }[] = [
@@ -80,16 +89,33 @@ export const LFO: React.FC<LFOProps> = ({
   minRate = 0.001,
   showDelay = true,
   syncMode = false,
-  width = 280,
+  width: widthProp,
+  fillContainer = false,
 }) => {
   const [hoveredShape, setHoveredShape] = useState<LFOShape | null>(null);
   const [animationPhase, setAnimationPhase] = useState(0);
   const animationRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(widthProp || 280);
 
-  const waveformHeight = 60;
+  // Observe container size for responsive behavior
+  useEffect(() => {
+    if (!fillContainer || !containerRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [fillContainer]);
+
+  const width = fillContainer ? containerWidth : (widthProp || 280);
+  const waveformHeight = CELL_SIZE * 1.5; // 1.5 cells = 60px
   const waveformPoints = 100;
-  const sliderLength = width - 32;
 
   // Animate the waveform based on rate
   useEffect(() => {
@@ -190,17 +216,21 @@ export const LFO: React.FC<LFOProps> = ({
     onChange?.({ ...value, delay: normalized * 10000 });
   }, [value, onChange]);
 
+  const sliderLength = width - 32;
+
   return (
     <div
+      ref={containerRef}
       className="synth-control"
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: 14,
-        padding: 8,
-        background: colors.bg.surface,
+        gap: HALF_CELL * 0.7, // ~14px
+        padding: fillContainer ? 0 : HALF_CELL * 0.4, // ~8px when not filling
+        background: fillContainer ? 'transparent' : colors.bg.surface,
         borderRadius: 8,
-        width,
+        width: fillContainer ? '100%' : width,
+        height: fillContainer ? '100%' : 'auto',
         minHeight: 'fit-content',
       }}
     >
