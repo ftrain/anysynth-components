@@ -61,5 +61,5 @@ export type { MIDIMonitorProps, MIDIEvent } from './MIDIMonitor';
 export * from './Icons';
 
 // Primitive building blocks
-export { Slider, OptionPicker, WaveformPicker } from './Primitives';
-export type { SliderProps, OptionPickerProps, WaveformPickerProps, WaveformShape } from './Primitives';
+export { Slider, OptionPicker, WaveformPicker, SquareModule, ErrorBoundary } from './Primitives';
+export type { SliderProps, OptionPickerProps, WaveformPickerProps, WaveformShape, SquareModuleProps, ErrorBoundaryProps } from './Primitives';

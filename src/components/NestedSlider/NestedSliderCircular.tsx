@@ -7,9 +7,18 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import type { Parameter, ParameterChangeHandler, ParameterWithOptions, OptionChangeHandler } from '../../types';
+import type { Parameter, ParameterChangeHandler, ParameterWithOptions, OptionChangeHandler, OptionConfig } from '../../types';
 import { colors, components } from '../../theme/tokens';
 import { moduleStyles, getAccentColor } from '../../theme/styles';
+
+// Helper to normalize options to OptionConfig format
+const normalizeOptions = (options: string[] | OptionConfig[]): OptionConfig[] => {
+  if (options.length === 0) return [];
+  if (typeof options[0] === 'string') {
+    return (options as string[]).map(label => ({ label }));
+  }
+  return options as OptionConfig[];
+};
 
 // Component-specific constants from theme
 const KNOB = components.knobCircular;
@@ -18,6 +27,8 @@ interface NestedSliderCircularProps {
   parameters: (Parameter | ParameterWithOptions)[];
   onChange?: ParameterChangeHandler;
   onOptionChange?: OptionChangeHandler;
+  /** Callback when center is clicked (for power toggle, etc.) */
+  onCenterClick?: () => void;
   label?: string;
   size?: number;
   startAngle?: number;
@@ -35,6 +46,7 @@ export const NestedSliderCircular: React.FC<NestedSliderCircularProps> = ({
   parameters,
   onChange,
   onOptionChange,
+  onCenterClick,
   label,
   size: sizeProp = KNOB.defaultSize,
   startAngle = KNOB.arcStart,
@@ -123,8 +135,8 @@ export const NestedSliderCircular: React.FC<NestedSliderCircularProps> = ({
 
   // Calculate option positions along the halo arc (like ChordKnob)
   const getOptionPositions = (param: ParameterWithOptions) => {
-    const opts = param.options;
-    const optCount = opts.length;
+    const normalizedOpts = normalizeOptions(param.options);
+    const optCount = normalizedOpts.length;
 
     // Halo radius is just outside the outermost ring
     const haloRadius = outerRadius + 16;
@@ -133,13 +145,14 @@ export const NestedSliderCircular: React.FC<NestedSliderCircularProps> = ({
     const angleSpan = sweepAngle; // Usually 270°
     const anglePerOption = optCount > 1 ? angleSpan / (optCount - 1) : 0;
 
-    return opts.map((opt, i) => {
+    return normalizedOpts.map((opt, i) => {
       // Calculate angle for this option (startAngle is typically -135°)
       const angle = startAngle + i * anglePerOption;
       const rad = (angle - 90) * Math.PI / 180;
 
       return {
-        label: opt,
+        label: opt.label,
+        icon: opt.icon,
         x: cx + haloRadius * Math.cos(rad),
         y: cy + haloRadius * Math.sin(rad),
         angle,
@@ -245,9 +258,13 @@ export const NestedSliderCircular: React.FC<NestedSliderCircularProps> = ({
 
     e.preventDefault();
 
-    // Center click toggles enabled
+    // Center click - call external handler if provided, otherwise toggle internal enabled
     if (isClickOnCenter(e)) {
-      setEnabled(prev => !prev);
+      if (onCenterClick) {
+        onCenterClick();
+      } else {
+        setEnabled(prev => !prev);
+      }
       return;
     }
 
@@ -292,21 +309,25 @@ export const NestedSliderCircular: React.FC<NestedSliderCircularProps> = ({
       onChange?.(drag.id, newValue);
 
       // Drag-to-select option based on the current value position on the arc
-      // When dragging the wave parameter (or any param with options), the value determines the selected option
-      if (dragSelectOptions && paramWithOptions && drag.id === paramWithOptions.id) {
-        const opts = paramWithOptions.options;
-        const optCount = opts.length;
-        // Map value (0-1) to option index
-        const optIndex = Math.round(newValue * (optCount - 1));
-        const detectedOption = opts[Math.max(0, Math.min(optCount - 1, optIndex))];
+      // When dragging any param with options, the value determines the selected option
+      if (dragSelectOptions) {
+        const draggedParam = parameters.find(p => p.id === drag.id);
+        if (draggedParam && hasOptions(draggedParam)) {
+          const paramWithOpts = draggedParam as ParameterWithOptions;
+          const normalizedOpts = normalizeOptions(paramWithOpts.options);
+          const optCount = normalizedOpts.length;
+          // Map value (0-1) to option index
+          const optIndex = Math.round(newValue * (optCount - 1));
+          const detectedOption = normalizedOpts[Math.max(0, Math.min(optCount - 1, optIndex))].label;
 
-        setHoveredOption(detectedOption);
+          setHoveredOption(detectedOption);
 
-        // Auto-select on drag through option (only if changed)
-        if (detectedOption && detectedOption !== lastOptionRef.current) {
-          lastOptionRef.current = detectedOption;
-          setSelectedOptions(prev => ({ ...prev, [paramWithOptions.id]: detectedOption }));
-          onOptionChange?.(paramWithOptions.id, detectedOption);
+          // Auto-select on drag through option (only if changed)
+          if (detectedOption && detectedOption !== lastOptionRef.current) {
+            lastOptionRef.current = detectedOption;
+            setSelectedOptions(prev => ({ ...prev, [paramWithOpts.id]: detectedOption }));
+            onOptionChange?.(paramWithOpts.id, detectedOption);
+          }
         }
       }
     };
@@ -509,7 +530,7 @@ export const NestedSliderCircular: React.FC<NestedSliderCircularProps> = ({
           );
         })}
 
-        {/* Options halo - dots along the arc outside the knob - only visible when hovering or dragging the specific ring */}
+        {/* Options halo - dots/icons along the arc outside the knob - only visible when hovering or dragging the specific ring */}
         {(() => {
           // Find the parameter with options that is currently hovered or active
           const displayParamId = activeParam || hoveredParam;
@@ -524,10 +545,11 @@ export const NestedSliderCircular: React.FC<NestedSliderCircularProps> = ({
           return getOptionPositions(paramWithOpts).map((pos) => {
             const isSelected = selectedOptions[paramWithOpts.id] === pos.label;
             const isHovered = hoveredOption === pos.label;
+            const hasIcon = !!pos.icon;
 
           // Position label next to the dot, adjusting anchor based on position
           const isLeftSide = pos.x < cx;
-          const labelOffset = 12;
+          const labelOffset = hasIcon ? 18 : 12;
           const labelX = isLeftSide ? pos.x - labelOffset : pos.x + labelOffset;
           const labelY = pos.y;
           const textAnchor = isLeftSide ? 'end' : 'start';
@@ -542,30 +564,43 @@ export const NestedSliderCircular: React.FC<NestedSliderCircularProps> = ({
                 onOptionChange?.(paramWithOpts.id, pos.label);
               }}
             >
-              {/* Option dot */}
+              {/* Option background circle (for both dot and icon) */}
               <circle
                 cx={pos.x}
                 cy={pos.y}
-                r={isSelected ? 7 : 5}
+                r={hasIcon ? (isSelected ? 14 : 12) : (isSelected ? 7 : 5)}
                 fill={isSelected ? color : colors.bg.elevated}
                 stroke={color}
                 strokeWidth={isSelected ? 0 : 1}
                 opacity={isSelected ? 1 : isHovered ? 0.9 : 0.6}
               />
-              {/* Option label */}
-              <text
-                x={labelX}
-                y={labelY}
-                textAnchor={textAnchor}
-                dominantBaseline="middle"
-                fill={isSelected ? color : colors.text.muted}
-                fontSize={isSelected ? 11 : 9}
-                fontFamily="var(--font-mono)"
-                fontWeight={isSelected ? 600 : 400}
-                style={{ pointerEvents: 'none' }}
-              >
-                {pos.label.length > 4 ? pos.label.slice(0, 4) : pos.label}
-              </text>
+              {/* Option icon or label */}
+              {hasIcon ? (
+                // Render SVG icon - wrap in foreignObject or use directly
+                <g
+                  transform={`translate(${pos.x - 8}, ${pos.y - 6})`}
+                  style={{ pointerEvents: 'none' }}
+                  opacity={isSelected ? 1 : 0.7}
+                >
+                  <g style={{ color: isSelected ? colors.bg.base : colors.text.muted }}>
+                    {pos.icon}
+                  </g>
+                </g>
+              ) : (
+                <text
+                  x={labelX}
+                  y={labelY}
+                  textAnchor={textAnchor}
+                  dominantBaseline="middle"
+                  fill={isSelected ? color : colors.text.muted}
+                  fontSize={isSelected ? 11 : 9}
+                  fontFamily="var(--font-mono)"
+                  fontWeight={isSelected ? 600 : 400}
+                  style={{ pointerEvents: 'none' }}
+                >
+                  {pos.label.length > 4 ? pos.label.slice(0, 4) : pos.label}
+                </text>
+              )}
             </g>
           );
         });

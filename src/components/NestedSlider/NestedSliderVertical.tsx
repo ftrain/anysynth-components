@@ -7,9 +7,14 @@
  */
 
 import React, { useState, useCallback, useRef } from 'react';
-import type { Parameter, ParameterChangeHandler, ParameterWithOptions, OptionChangeHandler } from '../../types';
+import type { Parameter, ParameterChangeHandler, ParameterWithOptions, OptionChangeHandler, OptionConfig } from '../../types';
 import { colors, components } from '../../theme/tokens';
 import { moduleStyles, labelStyles, getAccentColor } from '../../theme/styles';
+
+// Helper to get label from option
+const getOptionLabel = (opt: string | OptionConfig): string => {
+  return typeof opt === 'string' ? opt : opt.label;
+};
 
 // Component-specific constants from theme
 const SLIDER = components.sliderVertical;
@@ -291,9 +296,12 @@ export const NestedSliderVertical: React.FC<NestedSliderVerticalProps> = ({
                     width: '100%',
                   }}
                 >
-                  {(param as ParameterWithOptions).options.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
+                  {(param as ParameterWithOptions).options.map((opt) => {
+                    const label = getOptionLabel(opt);
+                    return (
+                      <option key={label} value={label}>{label}</option>
+                    );
+                  })}
                 </select>
               )}
             </div>

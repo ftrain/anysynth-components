@@ -7,10 +7,15 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import type { Parameter, ParameterChangeHandler, ParameterWithOptions, OptionChangeHandler } from '../../types';
+import type { Parameter, ParameterChangeHandler, ParameterWithOptions, OptionChangeHandler, OptionConfig } from '../../types';
 import { colors, components, type ColorAccent } from '../../theme/tokens';
 import { moduleStyles, labelStyles, getAccentColor } from '../../theme/styles';
 import { Slider } from '../Primitives';
+
+// Helper to get label from option
+const getOptionLabel = (opt: string | OptionConfig): string => {
+  return typeof opt === 'string' ? opt : opt.label;
+};
 
 // Component-specific constants from theme
 const SLIDER = components.sliderHorizontal;
@@ -156,13 +161,14 @@ export const NestedSliderHorizontal: React.FC<NestedSliderHorizontalProps> = ({
             return (
               <div key={param.id} style={{ display: 'flex', gap: 2 }}>
                 {typedParam.options.map((opt) => {
-                  const isSelected = selectedOptions[param.id] === opt;
+                  const label = getOptionLabel(opt);
+                  const isSelected = selectedOptions[param.id] === label;
                   return (
                     <button
-                      key={opt}
+                      key={label}
                       onClick={() => {
-                        setSelectedOptions(prev => ({ ...prev, [param.id]: opt }));
-                        onOptionChange?.(param.id, opt);
+                        setSelectedOptions(prev => ({ ...prev, [param.id]: label }));
+                        onOptionChange?.(param.id, label);
                       }}
                       style={{
                         padding: '4px 8px',
@@ -176,7 +182,7 @@ export const NestedSliderHorizontal: React.FC<NestedSliderHorizontalProps> = ({
                         transition: 'all 100ms',
                       }}
                     >
-                      {opt}
+                      {label}
                     </button>
                   );
                 })}

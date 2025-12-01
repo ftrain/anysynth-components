@@ -8,9 +8,14 @@
  */
 
 import React, { useState, useCallback, useRef } from 'react';
-import type { Parameter, ParameterChangeHandler, ParameterWithOptions, OptionChangeHandler } from '../../types';
+import type { Parameter, ParameterChangeHandler, ParameterWithOptions, OptionChangeHandler, OptionConfig } from '../../types';
 import { colors, components } from '../../theme/tokens';
 import { moduleStyles, labelStyles, getAccentColor } from '../../theme/styles';
+
+// Helper to get label from option
+const getOptionLabel = (opt: string | OptionConfig): string => {
+  return typeof opt === 'string' ? opt : opt.label;
+};
 
 // Component-specific constants from theme
 const GRID = components.knobGrid;
@@ -357,13 +362,14 @@ export const NestedSliderGrid: React.FC<NestedSliderGridProps> = ({
                   minWidth: cellSize,
                 }}>
                   {(param as ParameterWithOptions).options.map((opt) => {
-                    const isSelected = selectedOptions[param.id] === opt;
+                    const label = getOptionLabel(opt);
+                    const isSelected = selectedOptions[param.id] === label;
                     return (
                       <button
-                        key={opt}
+                        key={label}
                         onClick={() => {
-                          setSelectedOptions(prev => ({ ...prev, [param.id]: opt }));
-                          onOptionChange?.(param.id, opt);
+                          setSelectedOptions(prev => ({ ...prev, [param.id]: label }));
+                          onOptionChange?.(param.id, label);
                           setEditingParam(null);
                         }}
                         style={{
@@ -380,7 +386,7 @@ export const NestedSliderGrid: React.FC<NestedSliderGridProps> = ({
                           cursor: 'pointer',
                         }}
                       >
-                        {opt}
+                        {label}
                       </button>
                     );
                   })}

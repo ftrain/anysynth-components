@@ -2,6 +2,7 @@
  * Core Types for Synth Components
  */
 
+import React from 'react';
 import type { ColorAccent } from '../theme/tokens';
 
 // Base parameter type - the foundation for all controls
@@ -18,9 +19,15 @@ export interface Parameter {
   bipolar?: boolean;       // Center at 0.5 (e.g., pan, pitch)
 }
 
+// Option with optional icon
+export interface OptionConfig {
+  label: string;
+  icon?: React.ReactNode;  // SVG icon element
+}
+
 // Parameter with options (like waveform selection)
 export interface ParameterWithOptions extends Parameter {
-  options: string[];
+  options: string[] | OptionConfig[];  // Can be simple strings or objects with icons
   selectedOption: string;
 }
 
