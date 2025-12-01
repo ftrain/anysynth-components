@@ -102,6 +102,75 @@ src/
 }
 ```
 
+## SquareModule Pattern
+
+The standard module wrapper used in all plugin UIs:
+
+```tsx
+const SquareModule: React.FC<{
+  title?: string;
+  children: React.ReactNode;
+  color?: string;  // Border accent color
+}> = ({ title, children, color }) => (
+  <div style={{
+    background: colors.bg.surface,
+    borderRadius: 12,
+    border: `1px solid ${color ? color + '33' : colors.bg.border}`,
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+  }}>
+    {title && (
+      <div className="label" style={{ padding: '10px 8px', color: color || colors.text.muted, flexShrink: 0 }}>
+        {title}
+      </div>
+    )}
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 8 }}>
+      {children}
+    </div>
+  </div>
+);
+```
+
+## Component Selection Guide
+
+| Module Type | Component | Recommended Size |
+|-------------|-----------|-----------------|
+| VCO, Filter, Master | `NestedSliderCircular` | size=180-220 |
+| Envelope (ADSR) | `ADSR` | width=280, height=200 |
+| Sequencer velocity | `NestedSliderVertical` | height=220 |
+| Sequencer pitch | `NestedSliderGrid` | columns=4, cellSize=60 |
+| Keyboard | `PianoKeyboard` | compact, octaves=2 |
+| Toggle (waveform, run) | `LEDButton` | 40x40 |
+| Simple parameter | `CompactSlider` | thick=true |
+
+### Usage Example
+
+```tsx
+<div className="synth-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+  <SquareModule title="VCO 1" color={colors.accent.green}>
+    <NestedSliderCircular
+      parameters={[
+        { id: 'freq', name: 'FREQ', value: 0.5, color: 'green' },
+        { id: 'level', name: 'LEVEL', value: 0.7, color: 'coral' },
+      ]}
+      onChange={handleChange}
+      size={220}
+    />
+  </SquareModule>
+
+  <SquareModule title="AMP ENV" color={colors.accent.pink}>
+    <ADSR
+      value={{ attack: 10, decay: 200, sustain: 0.7, release: 300 }}
+      onChange={handleEnvChange}
+      width={280}
+      height={200}
+      showValues={false}
+    />
+  </SquareModule>
+</div>
+```
+
 ## State Management
 
 Uses Zustand for lightweight state. Components accept controlled values via props with `onChange` callbacks.
