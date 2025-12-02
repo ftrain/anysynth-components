@@ -23,12 +23,27 @@ const normalizeOptions = (options: string[] | OptionConfig[]): OptionConfig[] =>
 // Component-specific constants from theme
 const KNOB = components.knobCircular;
 
+export interface CenterToggle {
+  /** Whether the toggle is currently active/on */
+  active: boolean;
+  /** Label shown when toggle is active (e.g., "STOP") */
+  activeLabel?: string;
+  /** Label shown when toggle is inactive (e.g., "PLAY") */
+  inactiveLabel?: string;
+  /** Color when active - defaults to 'green' */
+  activeColor?: string;
+  /** Color when inactive - defaults to muted */
+  inactiveColor?: string;
+}
+
 interface NestedSliderCircularProps {
   parameters: (Parameter | ParameterWithOptions)[];
   onChange?: ParameterChangeHandler;
   onOptionChange?: OptionChangeHandler;
   /** Callback when center is clicked (for power toggle, etc.) */
   onCenterClick?: () => void;
+  /** Configure the center as an explicit toggle with active/inactive states */
+  centerToggle?: CenterToggle;
   label?: string;
   size?: number;
   startAngle?: number;
@@ -47,6 +62,7 @@ export const NestedSliderCircular: React.FC<NestedSliderCircularProps> = ({
   onChange,
   onOptionChange,
   onCenterClick,
+  centerToggle,
   label,
   size: sizeProp = KNOB.defaultSize,
   startAngle = KNOB.arcStart,
@@ -71,8 +87,11 @@ export const NestedSliderCircular: React.FC<NestedSliderCircularProps> = ({
   const [activeParam, setActiveParam] = useState<string | null>(null);
   const [hoveredParam, setHoveredParam] = useState<string | null>(null);
   const [hoveredOption, setHoveredOption] = useState<string | null>(null);
-  const [enabled, setEnabled] = useState(true);
+  const [internalEnabled, setInternalEnabled] = useState(true);
   const [containerSize, setContainerSize] = useState(0);
+
+  // Use centerToggle.active if provided, otherwise use internal state
+  const enabled = centerToggle ? centerToggle.active : internalEnabled;
 
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -262,14 +281,15 @@ export const NestedSliderCircular: React.FC<NestedSliderCircularProps> = ({
     if (isClickOnCenter(e)) {
       if (onCenterClick) {
         onCenterClick();
-      } else {
-        setEnabled(prev => !prev);
+      } else if (!centerToggle) {
+        // Only toggle internal state if not using external centerToggle
+        setInternalEnabled(prev => !prev);
       }
       return;
     }
 
-    if (!enabled) {
-      setEnabled(true);
+    if (!enabled && !centerToggle) {
+      setInternalEnabled(true);
       return;
     }
 
@@ -405,6 +425,7 @@ export const NestedSliderCircular: React.FC<NestedSliderCircularProps> = ({
             fill="none"
             stroke={highlightedParam === ring.id ? colors.bg.highlight : colors.bg.elevated}
             strokeWidth={bandWidth}
+            opacity={enabled ? 1 : 0.5}
           />
         ))}
 
@@ -419,13 +440,13 @@ export const NestedSliderCircular: React.FC<NestedSliderCircularProps> = ({
               stroke={color}
               strokeWidth={bandWidth - 2}
               strokeLinecap="butt"
-              opacity={enabled ? (highlightedParam === ring.id ? 0.35 : 0.2) : 0.08}
+              opacity={enabled ? (highlightedParam === ring.id ? 0.35 : 0.2) : 0.06}
             />
           );
         })}
 
-        {/* Value arcs */}
-        {enabled && rings.map((ring) => {
+        {/* Value arcs - only show when enabled */}
+        {rings.map((ring) => {
           const value = values[ring.id];
           if (value <= 0.01) return null;
           const color = getColor(ring);
@@ -438,61 +459,130 @@ export const NestedSliderCircular: React.FC<NestedSliderCircularProps> = ({
               stroke={color}
               strokeWidth={bandWidth - 2}
               strokeLinecap="butt"
-              opacity={highlightedParam === ring.id ? 1 : 0.8}
+              opacity={enabled ? (highlightedParam === ring.id ? 1 : 0.8) : 0.15}
             />
           );
         })}
 
-        {/* Center power indicator */}
-        <circle
-          cx={cx}
-          cy={cy}
-          r={startRadius - bandWidth / 2 - 4}
-          fill={enabled ? colors.semantic.active : colors.bg.elevated}
-          opacity={0.8}
-        />
-        <circle cx={cx} cy={cy} r={4} fill={colors.bg.base} />
+        {/* Center toggle indicator */}
+        {(() => {
+          // Determine center colors based on centerToggle or internal enabled state
+          const toggleActive = centerToggle ? centerToggle.active : enabled;
+          const activeColor = centerToggle?.activeColor
+            ? getAccentColor(centerToggle.activeColor as any)
+            : colors.semantic.active;
+          const inactiveColor = centerToggle?.inactiveColor
+            ? getAccentColor(centerToggle.inactiveColor as any)
+            : colors.bg.elevated;
+          const centerColor = toggleActive ? activeColor : inactiveColor;
+          const toggleLabel = centerToggle
+            ? (toggleActive ? centerToggle.activeLabel : centerToggle.inactiveLabel)
+            : null;
+          // Show toggle label when not hovering a parameter
+          const showToggleLabel = toggleLabel && !displayRing;
+
+          return (
+            <>
+              <circle
+                cx={cx}
+                cy={cy}
+                r={startRadius - bandWidth / 2 - 4}
+                fill={centerColor}
+                opacity={toggleActive ? 0.9 : 0.5}
+                style={{ cursor: 'pointer' }}
+              />
+              <circle cx={cx} cy={cy} r={4} fill={colors.bg.base} />
+              {showToggleLabel && (
+                <text
+                  x={cx}
+                  y={cy}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill={toggleActive ? colors.bg.base : colors.text.muted}
+                  fontSize={size * 0.08}
+                  fontFamily="var(--font-mono)"
+                  fontWeight={600}
+                  style={{ pointerEvents: 'none' }}
+                >
+                  {toggleLabel}
+                </text>
+              )}
+            </>
+          );
+        })()}
 
         {/* Info display */}
         {displayRing ? (
           <g>
-            <text
-              x={cx}
-              y={cy + outerRadius * 0.35}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fill={getColor(displayRing)}
-              fontSize={size * 0.045}
-              fontFamily="var(--font-mono)"
-            >
-              {displayRing.name}
-            </text>
-            <text
-              x={cx}
-              y={cy + outerRadius * 0.55}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fill={colors.text.primary}
-              fontSize={size * 0.07}
-              fontFamily="var(--font-numeric)"
-              fontWeight={500}
-              style={{ fontVariantNumeric: 'tabular-nums' }}
-            >
-              {formatValue(displayRing, values[displayRing.id])}
-            </text>
-            {hasOptions(displayRing) && (
-              <text
-                x={cx}
-                y={cy + outerRadius * 0.72}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fill={getColor(displayRing)}
-                fontSize={size * 0.035}
-                fontFamily="var(--font-mono)"
-                opacity={0.8}
-              >
-                {selectedOptions[displayRing.id]}
-              </text>
+            {/* When centerToggle is present, position info below the toggle label in the dark center area */}
+            {centerToggle ? (
+              <>
+                <text
+                  x={cx}
+                  y={cy + 10}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill={getColor(displayRing)}
+                  fontSize={size * 0.04}
+                  fontFamily="var(--font-mono)"
+                >
+                  {displayRing.name}
+                </text>
+                <text
+                  x={cx}
+                  y={cy + 22}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill={colors.text.primary}
+                  fontSize={size * 0.055}
+                  fontFamily="var(--font-numeric)"
+                  fontWeight={500}
+                  style={{ fontVariantNumeric: 'tabular-nums' }}
+                >
+                  {formatValue(displayRing, values[displayRing.id])}
+                </text>
+              </>
+            ) : (
+              <>
+                <text
+                  x={cx}
+                  y={cy + outerRadius * 0.35}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill={getColor(displayRing)}
+                  fontSize={size * 0.045}
+                  fontFamily="var(--font-mono)"
+                >
+                  {displayRing.name}
+                </text>
+                <text
+                  x={cx}
+                  y={cy + outerRadius * 0.55}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill={colors.text.primary}
+                  fontSize={size * 0.07}
+                  fontFamily="var(--font-numeric)"
+                  fontWeight={500}
+                  style={{ fontVariantNumeric: 'tabular-nums' }}
+                >
+                  {formatValue(displayRing, values[displayRing.id])}
+                </text>
+                {hasOptions(displayRing) && (
+                  <text
+                    x={cx}
+                    y={cy + outerRadius * 0.72}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fill={getColor(displayRing)}
+                    fontSize={size * 0.035}
+                    fontFamily="var(--font-mono)"
+                    opacity={0.8}
+                  >
+                    {selectedOptions[displayRing.id]}
+                  </text>
+                )}
+              </>
             )}
           </g>
         ) : (
